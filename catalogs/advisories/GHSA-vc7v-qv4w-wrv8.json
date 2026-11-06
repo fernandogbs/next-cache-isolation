@@ -1,0 +1,13 @@
+{
+  "id": "GHSA-vc7v-qv4w-wrv8",
+  "title": "Nested use cache can leak across root params when outer finishes before inner publishes dependencies",
+  "url": "https://github.com/vercel/next.js/security/advisories/GHSA-vc7v-qv4w-wrv8",
+  "affectedRange": ">=16.2.0 <=16.4.4",
+  "fixtureVulnerablePin": "16.3.0",
+  "fixturePatchedPin": "16.4.5",
+  "notes": [
+    "Trigger: outer public 'use cache' calls inner 'use cache' that reads next/root-params and returns { early, slow }; outer returns early without awaiting slow.",
+    "Effect: outer cache entry may be keyed without the root param; a later request for another root-param value reuses that entry.",
+    "fixtureVulnerablePin is filled after empirical reproduction (exact version in affectedRange)."
+  ]
+}

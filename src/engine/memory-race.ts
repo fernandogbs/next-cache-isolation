@@ -1,5 +1,8 @@
 import { interpolatePath } from "../fixtures/loader.js";
-import type { FixtureManifest } from "../fixtures/manifest.js";
+import type {
+  ColdFillRaceScenario,
+  FixtureManifest,
+} from "../fixtures/manifest.js";
 import { evaluateBodySentinel } from "../validators/body-sentinel.js";
 
 export type MemoryRaceDeps = {
@@ -7,8 +10,18 @@ export type MemoryRaceDeps = {
   fetchImpl?: typeof fetch;
 };
 
-function contextById(manifest: FixtureManifest, id: string) {
-  const ctx = manifest.scenario.contexts.find((item) => item.id === id);
+function assertColdFillRace(
+  manifest: FixtureManifest,
+): asserts manifest is FixtureManifest & { scenario: ColdFillRaceScenario } {
+  if (manifest.scenario.procedure !== "cold-fill-race") {
+    throw new Error(
+      `runMemoryRace requires procedure cold-fill-race, got ${manifest.scenario.procedure}`,
+    );
+  }
+}
+
+function contextById(scenario: ColdFillRaceScenario, id: string) {
+  const ctx = scenario.contexts.find((item) => item.id === id);
   if (!ctx) {
     throw new Error(`Unknown context id: ${id}`);
   }
@@ -43,15 +56,16 @@ export async function runMemoryRace(
   if (manifest.cachePolicy !== "memory") {
     throw new Error(`Unsupported cachePolicy: ${manifest.cachePolicy}`);
   }
+  assertColdFillRace(manifest);
 
   const fetchImpl = deps.fetchImpl ?? fetch;
   const { scenario } = manifest;
-  const directCtx = contextById(manifest, scenario.oracle.raceDirectContext);
+  const directCtx = contextById(scenario, scenario.oracle.raceDirectContext);
   const unstableCtx = contextById(
-    manifest,
+    scenario,
     scenario.oracle.raceUnstableContext,
   );
-  const observeCtx = contextById(manifest, scenario.oracle.observeContext);
+  const observeCtx = contextById(scenario, scenario.oracle.observeContext);
 
   if (scenario.latch.enabled) {
     const armUrl = new URL(scenario.latch.armPath, deps.baseUrl);

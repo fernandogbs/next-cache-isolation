@@ -20,6 +20,8 @@ function repoRoot(): string {
 const PUBLISHED_FIXTURES = [
   "fixtures/ghsa-mfr8-vulnerable",
   "fixtures/ghsa-mfr8-patched",
+  "fixtures/ghsa-vc7v-vulnerable",
+  "fixtures/ghsa-vc7v-patched",
 ] as const;
 
 export async function runPublishedSuite(options?: {
