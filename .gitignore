@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.next/
+.next-cache-isolation/
+coverage/
+*.tgz
+.DS_Store
+*.log
+.worktrees/
+fixtures/**/node_modules/
+fixtures/**/.next/
+fixtures/**/package-lock.json
+!fixtures/**/.gitkeep
