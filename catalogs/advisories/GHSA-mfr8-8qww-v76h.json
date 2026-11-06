@@ -3,7 +3,7 @@
   "title": "Cross-tenant cache disclosure when combining unstable_cache and use cache",
   "url": "https://github.com/vercel/next.js/security/advisories/GHSA-mfr8-8qww-v76h",
   "affectedRange": ">=16.3.0",
-  "fixtureVulnerablePin": null,
+  "fixtureVulnerablePin": "16.3.0",
   "fixturePatchedPin": "16.4.5",
   "notes": [
     "Advisory page listed Patched versions as None at publication; November 2026 Security Release and tag v16.4.5 announce the fix for Active LTS.",

@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install tool dependencies
+        run: npm ci
+
+      - name: Install fixture dependencies
+        run: |
+          npm --prefix fixtures/process-stub ci
+          npm --prefix fixtures/ghsa-mfr8-vulnerable ci
+          npm --prefix fixtures/ghsa-mfr8-patched ci
+
+      - name: Unit and integration tests
+        run: npm test
+
+      - name: Build CLI
+        run: npm run build
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Pack exclusion check
+        run: npm run pack:check
+
+      - name: Published suite (GHSA-mfr8)
+        run: node dist/cli/index.js test --suite published --base-port 43110
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-cache-isolation-report
+          path: .next-cache-isolation/report.json
+          if-no-files-found: ignore

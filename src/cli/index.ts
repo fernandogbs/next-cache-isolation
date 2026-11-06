@@ -1,5 +1,7 @@
 import { Command } from "commander";
 
+import { runPublishedSuite } from "../suites/published.js";
+
 const program = new Command();
 
 program
@@ -13,17 +15,23 @@ program
   .command("test")
   .description("Run cache isolation scenarios")
   .option("--suite <name>", "Suite to run", "published")
-  .action(async (options: { suite: string }) => {
+  .option("--base-port <port>", "Base localhost port for fixtures", "43110")
+  .action(async (options: { suite: string; basePort: string }) => {
     if (options.suite !== "published") {
       console.error(`Unknown suite: ${options.suite}`);
       process.exitCode = 2;
       return;
     }
 
-    console.error(
-      "Published suite runner is not wired yet. See milestone M1 tickets.",
-    );
-    process.exitCode = 2;
+    const basePort = Number.parseInt(options.basePort, 10);
+    if (!Number.isFinite(basePort) || basePort <= 0) {
+      console.error(`Invalid --base-port: ${options.basePort}`);
+      process.exitCode = 2;
+      return;
+    }
+
+    const { exitCode } = await runPublishedSuite({ basePort });
+    process.exitCode = exitCode;
   });
 
 await program.parseAsync(process.argv);

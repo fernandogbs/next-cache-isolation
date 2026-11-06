@@ -18,7 +18,7 @@ describe("advisory catalog loader", () => {
     expect(entry.id).toBe("GHSA-mfr8-8qww-v76h");
     expect(entry.affectedRange).toBe(">=16.3.0");
     expect(entry.fixturePatchedPin).toBe("16.4.5");
-    expect(entry.fixtureVulnerablePin).toBeNull();
+    expect(entry.fixtureVulnerablePin).toBe("16.3.0");
     expect(entry.url).toContain("GHSA-mfr8-8qww-v76h");
   });
 
