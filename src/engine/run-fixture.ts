@@ -5,6 +5,7 @@ import { NextProcessManager } from "../process/index.js";
 
 import { runMemoryRace } from "./memory-race.js";
 import type { FixtureRunResult } from "./types.js";
+import { runWarmThenObserve } from "./warm-then-observe.js";
 
 export type RunFixtureOptions = {
   fixtureDirectory: string;
@@ -30,7 +31,7 @@ export async function runFixture(
       cachePolicy: manifest.cachePolicy,
       expected: manifest.expected,
       actual: "SKIP",
-      skipReason: `cachePolicy ${manifest.cachePolicy} not implemented in M1`,
+      skipReason: `cachePolicy ${manifest.cachePolicy} not implemented`,
     };
   }
 
@@ -53,7 +54,17 @@ export async function runFixture(
   try {
     const build = await manager.build();
     const server = await manager.start();
-    const oracle = await runMemoryRace(manifest, { baseUrl: server.baseUrl });
+    const oracle =
+      manifest.scenario.procedure === "warm-then-observe"
+        ? await runWarmThenObserve(manifest, { baseUrl: server.baseUrl })
+        : manifest.scenario.procedure === "cold-fill-race"
+          ? await runMemoryRace(manifest, { baseUrl: server.baseUrl })
+          : (() => {
+              const _exhaustive: never = manifest.scenario;
+              throw new Error(
+                `Unsupported procedure: ${(_exhaustive as { procedure: string }).procedure}`,
+              );
+            })();
     const actual = oracle.passed ? "PASS" : "FAIL";
 
     return {

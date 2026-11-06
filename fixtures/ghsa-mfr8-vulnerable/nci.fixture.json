@@ -8,6 +8,7 @@
   "cachePolicy": "memory",
   "scenario": {
     "id": "mfr8-cold-fill-race",
+    "procedure": "cold-fill-race",
     "rootParamName": "locale",
     "contexts": [
       {
