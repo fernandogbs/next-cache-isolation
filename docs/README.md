@@ -10,7 +10,10 @@
 
 ## Backlog
 
-Issues are cut vertically on GitHub:
+Agent workflow: `docs/agents/` + root `AGENTS.md` (Matt Pocock skills).
 
-- **M1** (`milestone:m1`): [#1](https://github.com/fernandogbs/next-cache-isolation/issues/1)–[#6](https://github.com/fernandogbs/next-cache-isolation/issues/6)
+- **Spec M1:** [#12](https://github.com/fernandogbs/next-cache-isolation/issues/12)
+- **M1 tickets** (`ready-for-agent`): [#13](https://github.com/fernandogbs/next-cache-isolation/issues/13) → [#14](https://github.com/fernandogbs/next-cache-isolation/issues/14) → [#15](https://github.com/fernandogbs/next-cache-isolation/issues/15) → [#16](https://github.com/fernandogbs/next-cache-isolation/issues/16) → [#17](https://github.com/fernandogbs/next-cache-isolation/issues/17) → [#18](https://github.com/fernandogbs/next-cache-isolation/issues/18)  
+  Frontier: **#13**
 - **Later** (`milestone:later`): [#7](https://github.com/fernandogbs/next-cache-isolation/issues/7)–[#11](https://github.com/fernandogbs/next-cache-isolation/issues/11)
+- Planning stubs #1–#6 closed as superseded by #13–#18

@@ -114,7 +114,7 @@ slice):
   "expected": "FAIL",
   "nextVersion": "16.4.2",
   "cacheComponents": true,
-  "healthPath": "/__nci/health",
+  "healthPath": "/nci/health",
   "cachePolicy": "memory",
   "scenario": {
     "id": "mfr8-cold-fill-race",
