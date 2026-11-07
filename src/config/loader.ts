@@ -1,0 +1,38 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
+import { parse as parseYaml } from "yaml";
+
+import {
+  CustomSuiteConfigSchema,
+  type ResolvedCustomSuiteConfig,
+} from "./types.js";
+
+export const DEFAULT_CONFIG_FILENAME = "next-cache-isolation.yml";
+
+export function resolveConfigPath(
+  cwd: string,
+  configOption?: string,
+): string {
+  if (configOption) {
+    return path.resolve(cwd, configOption);
+  }
+  return path.resolve(cwd, DEFAULT_CONFIG_FILENAME);
+}
+
+export async function loadCustomSuiteConfig(
+  configPath: string,
+): Promise<ResolvedCustomSuiteConfig> {
+  const rawText = await readFile(configPath, "utf8");
+  const parsed: unknown = parseYaml(rawText);
+  const config = CustomSuiteConfigSchema.parse(parsed);
+  const configDir = path.dirname(configPath);
+
+  return {
+    configPath,
+    basePort: config.basePort,
+    fixtureDirectories: config.fixtures.map((entry) =>
+      path.resolve(configDir, entry.path),
+    ),
+  };
+}

@@ -2,7 +2,7 @@ import type { FixtureRunResult } from "../engine/types.js";
 
 export type SliceReport = {
   toolVersion: string;
-  suite: "published";
+  suite: "published" | "custom";
   nodeVersion: string;
   startedAt: string;
   completedAt: string;

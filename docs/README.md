@@ -6,6 +6,7 @@
 | --- | --- |
 | [superpowers/specs/2026-11-05-milestone-decision.md](superpowers/specs/2026-11-05-milestone-decision.md) | First milestone is the GHSA-mfr8 **vertical** slice |
 | [superpowers/specs/2026-11-05-ghsa-mfr8-slice-design.md](superpowers/specs/2026-11-05-ghsa-mfr8-slice-design.md) | Fixture manifest, `memory` policy, latch, oracle, exit codes |
+| [superpowers/specs/2026-11-07-custom-suite-m5-design.md](superpowers/specs/2026-11-07-custom-suite-m5-design.md) | Custom YAML / `init` / `doctor` |
 | [architecture/system-overview.md](architecture/system-overview.md) | Module map and per-scenario cache-policy state machines |
 
 ## Backlog
