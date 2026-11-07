@@ -39,16 +39,21 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: "22"
-        cache: npm
-        cache-dependency-path: ${{ github.action_path }}/package-lock.json
+        # Avoid cache-dependency-path here: with `uses: ./`, action_path can
+        # contain `./` and setup-node rejects relative path segments.
 
     - name: Install and build next-cache-isolation
       shell: bash
-      working-directory: ${{ github.action_path }}
+      env:
+        ACTION_PATH: ${{ github.action_path }}
       run: |
         set -euo pipefail
+        # Normalize action_path (uses: ./ may leave a trailing "/.")
+        ACTION_ROOT="$(cd "${ACTION_PATH}" && pwd)"
+        cd "${ACTION_ROOT}"
         npm ci
         npm run build
+        echo "NCI_ACTION_ROOT=${ACTION_ROOT}" >> "${GITHUB_ENV}"
 
     - name: Doctor
       if: inputs.run-doctor == 'true'
@@ -56,14 +61,14 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         set -euo pipefail
-        node "${{ github.action_path }}/dist/cli/index.js" doctor --config "${{ inputs.config }}"
+        node "${NCI_ACTION_ROOT}/dist/cli/index.js" doctor --config "${{ inputs.config }}"
 
     - name: Run custom suite
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
         set -euo pipefail
-        node "${{ github.action_path }}/dist/cli/index.js" test \
+        node "${NCI_ACTION_ROOT}/dist/cli/index.js" test \
           --suite custom \
           --config "${{ inputs.config }}" \
           --base-port "${{ inputs.base-port }}"
