@@ -1,0 +1,6 @@
+# Example custom suite pointing at in-repo GHSA-rhh4 fixtures.
+version: 1
+suite: custom
+fixtures:
+  - path: ../fixtures/ghsa-rhh4-vulnerable
+  - path: ../fixtures/ghsa-rhh4-patched

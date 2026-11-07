@@ -6,13 +6,27 @@ concurrent load; does not claim formal absence of leaks.
 
 ## Status
 
-Milestone **M1** is specified: a vertical slice that reproduces
-[GHSA-mfr8-8qww-v76h](https://github.com/vercel/next.js/security/advisories/GHSA-mfr8-8qww-v76h)
-before generic custom YAML and the other November 2026 cache advisories.
+Published suite covers GHSA-mfr8, GHSA-vc7v, GHSA-rhh4, and GHSA-vvgp.
+**M5** adds a custom suite via `next-cache-isolation.yml`, `init`, and `doctor`.
 
-See [docs/README.md](docs/README.md) for the locked decision, slice design,
-architecture diagrams, and GitHub issue map.
+See [docs/README.md](docs/README.md) for designs and the issue map.
+
+## Quick start (custom suite)
+
+```bash
+npx next-cache-isolation init
+# edit next-cache-isolation.yml → point fixtures[].path at apps with nci.fixture.json
+npx next-cache-isolation doctor
+npx next-cache-isolation test --suite custom
+```
+
+Published regression suite (this repo):
+
+```bash
+npm run build
+node dist/cli/index.js test --suite published
+```
 
 ## License
 
-MIT (intended).
+MIT

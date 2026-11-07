@@ -50,6 +50,9 @@ jobs:
       - name: Published suite (mfr8 + vc7v + rhh4 + vvgp)
         run: node dist/cli/index.js test --suite published --base-port 43110
 
+      - name: Custom suite smoke (rhh4 via example YAML)
+        run: node dist/cli/index.js test --suite custom --config examples/custom-suite.rhh4.yml --base-port 43210
+
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
