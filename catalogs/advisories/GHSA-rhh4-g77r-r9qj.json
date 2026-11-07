@@ -1,0 +1,13 @@
+{
+  "id": "GHSA-rhh4-g77r-r9qj",
+  "title": "Cross-user cache disclosure and poisoning in Next.js use cache with binary arguments",
+  "url": "https://github.com/vercel/next.js/security/advisories/GHSA-rhh4-g77r-r9qj",
+  "affectedRange": ">=16.0.0 <=16.4.4",
+  "fixtureVulnerablePin": "16.3.0",
+  "fixturePatchedPin": "16.4.5",
+  "notes": [
+    "Distinct binary / File arguments to a public 'use cache' function can produce identical cache identity.",
+    "Primary fixture trigger: same File bytes with different name (name/type omitted from key pre-fix; see vercel/next.js#101107).",
+    "fixtureVulnerablePin is filled after empirical reproduction (exact version in affectedRange)."
+  ]
+}

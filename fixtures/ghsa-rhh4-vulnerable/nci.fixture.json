@@ -1,0 +1,38 @@
+{
+  "id": "ghsa-rhh4-vulnerable",
+  "advisory": "GHSA-rhh4-g77r-r9qj",
+  "expected": "FAIL",
+  "nextVersion": "16.3.0",
+  "cacheComponents": true,
+  "healthPath": "/nci/health",
+  "cachePolicy": "memory",
+  "scenario": {
+    "id": "rhh4-file-name-collision",
+    "procedure": "warm-then-observe",
+    "rootParamName": "user",
+    "contexts": [
+      {
+        "id": "a",
+        "rootParams": { "user": "user-a" },
+        "sentinel": "NCI_RHH4_user-a"
+      },
+      {
+        "id": "b",
+        "rootParams": { "user": "user-b" },
+        "sentinel": "NCI_RHH4_user-b"
+      }
+    ],
+    "paths": {
+      "warm": "/?bytes=44&name={user}&type=text/plain",
+      "observe": "/?bytes=44&name={user}&type=text/plain"
+    },
+    "oracle": {
+      "type": "body-sentinel",
+      "warmContext": "a",
+      "observeContext": "b",
+      "mustContain": "NCI_RHH4_user-b",
+      "mustNotContain": ["NCI_RHH4_user-a"],
+      "acceptErrorWithoutForbidden": false
+    }
+  }
+}

@@ -22,6 +22,8 @@ const PUBLISHED_FIXTURES = [
   "fixtures/ghsa-mfr8-patched",
   "fixtures/ghsa-vc7v-vulnerable",
   "fixtures/ghsa-vc7v-patched",
+  "fixtures/ghsa-rhh4-vulnerable",
+  "fixtures/ghsa-rhh4-patched",
 ] as const;
 
 export async function runPublishedSuite(options?: {
