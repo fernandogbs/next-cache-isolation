@@ -1,0 +1,39 @@
+# Example downstream workflow. Point fixtures[] in next-cache-isolation.yml
+# at apps that already have nci.fixture.json and installed Next.js deps.
+#
+# Do not use pull_request_target with secrets for this Action.
+
+name: Cache isolation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Install fixture dependencies for every path listed in your config.
+      - name: Install fixture dependencies
+        run: |
+          # Example — replace with your fixture install commands:
+          # npm --prefix ./nci/my-scenario ci
+
+      - name: Run next-cache-isolation
+        uses: fernandogbs/next-cache-isolation@main
+        with:
+          config: next-cache-isolation.yml
+          base-port: "43110"
+          run-doctor: "true"

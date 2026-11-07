@@ -1,0 +1,77 @@
+name: next-cache-isolation
+description: Run a custom next-cache-isolation suite and upload the JSON report
+author: fernandogbs
+
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  config:
+    description: Path to next-cache-isolation.yml (relative to working-directory)
+    required: false
+    default: next-cache-isolation.yml
+  base-port:
+    description: Base localhost port for fixture servers
+    required: false
+    default: "43110"
+  working-directory:
+    description: Consumer workspace containing the config and fixtures
+    required: false
+    default: "."
+  run-doctor:
+    description: Run doctor before the suite (true/false)
+    required: false
+    default: "true"
+  upload-report:
+    description: Upload .next-cache-isolation/report.json as an artifact
+    required: false
+    default: "true"
+  report-artifact-name:
+    description: Artifact name for the JSON report
+    required: false
+    default: next-cache-isolation-report
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+        cache: npm
+        cache-dependency-path: ${{ github.action_path }}/package-lock.json
+
+    - name: Install and build next-cache-isolation
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        npm ci
+        npm run build
+
+    - name: Doctor
+      if: inputs.run-doctor == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        node "${{ github.action_path }}/dist/cli/index.js" doctor --config "${{ inputs.config }}"
+
+    - name: Run custom suite
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        node "${{ github.action_path }}/dist/cli/index.js" test \
+          --suite custom \
+          --config "${{ inputs.config }}" \
+          --base-port "${{ inputs.base-port }}"
+
+    - name: Upload report
+      if: always() && inputs.upload-report == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.report-artifact-name }}
+        path: ${{ inputs.working-directory }}/.next-cache-isolation/report.json
+        if-no-files-found: ignore

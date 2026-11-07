@@ -27,6 +27,16 @@ npm run build
 node dist/cli/index.js test --suite published
 ```
 
+## GitHub Action
+
+```yaml
+- uses: fernandogbs/next-cache-isolation@main
+  with:
+    config: next-cache-isolation.yml
+```
+
+See [examples/consumer-ci.yml](examples/consumer-ci.yml). Install fixture dependencies in the workflow before the Action. Do not use `pull_request_target` with secrets.
+
 ## License
 
 MIT
