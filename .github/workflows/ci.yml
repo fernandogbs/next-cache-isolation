@@ -32,6 +32,8 @@ jobs:
           npm --prefix fixtures/ghsa-vc7v-patched ci
           npm --prefix fixtures/ghsa-rhh4-vulnerable ci
           npm --prefix fixtures/ghsa-rhh4-patched ci
+          npm --prefix fixtures/ghsa-vvgp-vulnerable ci
+          npm --prefix fixtures/ghsa-vvgp-patched ci
 
       - name: Unit and integration tests
         run: npm test
@@ -45,7 +47,7 @@ jobs:
       - name: Pack exclusion check
         run: npm run pack:check
 
-      - name: Published suite (mfr8 + vc7v + rhh4)
+      - name: Published suite (mfr8 + vc7v + rhh4 + vvgp)
         run: node dist/cli/index.js test --suite published --base-port 43110
 
       - name: Upload report
