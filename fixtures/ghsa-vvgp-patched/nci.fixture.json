@@ -1,0 +1,38 @@
+{
+  "id": "ghsa-vvgp-patched",
+  "advisory": "GHSA-vvgp-ww4w-46vf",
+  "expected": "PASS",
+  "nextVersion": "16.4.5",
+  "cacheComponents": true,
+  "healthPath": "/nci/health",
+  "cachePolicy": "persistent",
+  "scenario": {
+    "id": "vvgp-poison-restart-observe",
+    "procedure": "warm-then-observe",
+    "rootParamName": "shell",
+    "contexts": [
+      {
+        "id": "poison",
+        "rootParams": { "shell": "poison" },
+        "sentinel": "NCI_VVGP_POISON"
+      },
+      {
+        "id": "healthy",
+        "rootParams": { "shell": "healthy" },
+        "sentinel": "NCI_VVGP_foo"
+      }
+    ],
+    "paths": {
+      "warm": "/placeholder/c/baz/%5Bthree%5D",
+      "observe": "/placeholder/c/foo/x"
+    },
+    "oracle": {
+      "type": "body-sentinel",
+      "warmContext": "poison",
+      "observeContext": "healthy",
+      "mustContain": "NCI_VVGP_foo",
+      "mustNotContain": [],
+      "acceptErrorWithoutForbidden": false
+    }
+  }
+}

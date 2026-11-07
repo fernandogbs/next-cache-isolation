@@ -5,7 +5,11 @@ import { NextProcessManager } from "../process/index.js";
 
 import { runMemoryRace } from "./memory-race.js";
 import type { FixtureRunResult } from "./types.js";
-import { runWarmThenObserve } from "./warm-then-observe.js";
+import {
+  observeWarmThenObserve,
+  runWarmThenObserve,
+  warmWarmThenObserve,
+} from "./warm-then-observe.js";
 
 export type RunFixtureOptions = {
   fixtureDirectory: string;
@@ -21,7 +25,10 @@ export async function runFixture(
     "node_modules/.bin/next",
   );
 
-  if (manifest.cachePolicy !== "memory") {
+  if (
+    manifest.cachePolicy !== "memory" &&
+    manifest.cachePolicy !== "persistent"
+  ) {
     return {
       id: manifest.id,
       advisory: manifest.advisory,
@@ -53,18 +60,43 @@ export async function runFixture(
 
   try {
     const build = await manager.build();
-    const server = await manager.start();
-    const oracle =
-      manifest.scenario.procedure === "warm-then-observe"
-        ? await runWarmThenObserve(manifest, { baseUrl: server.baseUrl })
-        : manifest.scenario.procedure === "cold-fill-race"
-          ? await runMemoryRace(manifest, { baseUrl: server.baseUrl })
-          : (() => {
-              const _exhaustive: never = manifest.scenario;
-              throw new Error(
-                `Unsupported procedure: ${(_exhaustive as { procedure: string }).procedure}`,
-              );
-            })();
+
+    const oracle = await (async () => {
+      switch (manifest.scenario.procedure) {
+        case "warm-then-observe": {
+          if (manifest.cachePolicy === "memory") {
+            const server = await manager.start();
+            return runWarmThenObserve(manifest, { baseUrl: server.baseUrl });
+          }
+          // persistent: poison, restart same .next (no rebuild), then observe.
+          const warmServer = await manager.start();
+          await warmWarmThenObserve(manifest, {
+            baseUrl: warmServer.baseUrl,
+          });
+          await manager.stop();
+          const observeServer = await manager.start();
+          return observeWarmThenObserve(manifest, {
+            baseUrl: observeServer.baseUrl,
+          });
+        }
+        case "cold-fill-race": {
+          if (manifest.cachePolicy !== "memory") {
+            throw new Error(
+              `cold-fill-race requires cachePolicy memory, got ${manifest.cachePolicy}`,
+            );
+          }
+          const server = await manager.start();
+          return runMemoryRace(manifest, { baseUrl: server.baseUrl });
+        }
+        default: {
+          const _exhaustive: never = manifest.scenario;
+          throw new Error(
+            `Unsupported procedure: ${(_exhaustive as { procedure: string }).procedure}`,
+          );
+        }
+      }
+    })();
+
     const actual = oracle.passed ? "PASS" : "FAIL";
 
     return {
@@ -73,7 +105,7 @@ export async function runFixture(
       scenarioId: manifest.scenario.id,
       nextVersion: manifest.nextVersion,
       buildId: build.buildId,
-      cachePolicy: "memory",
+      cachePolicy: manifest.cachePolicy,
       expected: manifest.expected,
       actual,
       oracle,
@@ -85,7 +117,7 @@ export async function runFixture(
       scenarioId: manifest.scenario.id,
       nextVersion: manifest.nextVersion,
       buildId: manager.buildId,
-      cachePolicy: "memory",
+      cachePolicy: manifest.cachePolicy,
       expected: manifest.expected,
       actual: "ERROR",
       errorMessage: error instanceof Error ? error.message : String(error),

@@ -47,32 +47,31 @@ async function getText(
   };
 }
 
-/**
- * memory policy: warm context A, then observe context B on the same process.
- * Never restarts the server between warm and observe.
- */
-export async function runWarmThenObserve(
+/** Seeds / poisons the shared entry; response is not the isolation oracle. */
+export async function warmWarmThenObserve(
   manifest: FixtureManifest,
   deps: WarmThenObserveDeps,
-): Promise<ReturnType<typeof evaluateBodySentinel>> {
-  if (manifest.cachePolicy !== "memory") {
-    throw new Error(`Unsupported cachePolicy: ${manifest.cachePolicy}`);
-  }
+): Promise<void> {
   assertWarmThenObserve(manifest);
-
   const fetchImpl = deps.fetchImpl ?? fetch;
   const { scenario } = manifest;
   const warmCtx = contextById(scenario, scenario.oracle.warmContext);
-  const observeCtx = contextById(scenario, scenario.oracle.observeContext);
-
   const warmUrl = new URL(
     interpolatePath(scenario.paths.warm, warmCtx.rootParams),
     deps.baseUrl,
   ).toString();
-  const warm = await getText(fetchImpl, warmUrl);
-  // Warm response seeds the poisoned outer entry; not the isolation oracle.
-  void warm;
+  await getText(fetchImpl, warmUrl);
+}
 
+/** Isolation oracle against the observe context. */
+export async function observeWarmThenObserve(
+  manifest: FixtureManifest,
+  deps: WarmThenObserveDeps,
+): Promise<ReturnType<typeof evaluateBodySentinel>> {
+  assertWarmThenObserve(manifest);
+  const fetchImpl = deps.fetchImpl ?? fetch;
+  const { scenario } = manifest;
+  const observeCtx = contextById(scenario, scenario.oracle.observeContext);
   const observeUrl = new URL(
     interpolatePath(scenario.paths.observe, observeCtx.rootParams),
     deps.baseUrl,
@@ -90,4 +89,21 @@ export async function runWarmThenObserve(
     },
     observe.durationMs,
   );
+}
+
+/**
+ * memory policy: warm then observe on the same process (no restart).
+ * For persistent, call warmWarmThenObserve / observeWarmThenObserve around a restart.
+ */
+export async function runWarmThenObserve(
+  manifest: FixtureManifest,
+  deps: WarmThenObserveDeps,
+): Promise<ReturnType<typeof evaluateBodySentinel>> {
+  if (manifest.cachePolicy !== "memory") {
+    throw new Error(
+      `runWarmThenObserve is memory-only; use split warm/observe for ${manifest.cachePolicy}`,
+    );
+  }
+  await warmWarmThenObserve(manifest, deps);
+  return observeWarmThenObserve(manifest, deps);
 }

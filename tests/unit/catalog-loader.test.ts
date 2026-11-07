@@ -42,6 +42,16 @@ describe("advisory catalog loader", () => {
     expect(entry.url).toContain("GHSA-rhh4-g77r-r9qj");
   });
 
+  it("loads GHSA-vvgp without hard-coded version ranges in the loader", async () => {
+    const entry = await loadAdvisory("GHSA-vvgp-ww4w-46vf", catalogRoot);
+
+    expect(entry.id).toBe("GHSA-vvgp-ww4w-46vf");
+    expect(entry.affectedRange).toBe(">=16.4.0 <=16.4.4");
+    expect(entry.fixturePatchedPin).toBe("16.4.5");
+    expect(entry.fixtureVulnerablePin).toBe("16.4.4");
+    expect(entry.url).toContain("GHSA-vvgp-ww4w-46vf");
+  });
+
   it("rejects malformed catalog JSON", async () => {
     await expect(loadAdvisory("does-not-exist", catalogRoot)).rejects.toThrow();
   });
