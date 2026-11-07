@@ -22,7 +22,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "pack:check": "npm pack --dry-run",
-    "test:published": "npm run build && node dist/cli/index.js test --suite published"
+    "test:published": "npm run build && node dist/cli/index.js test --suite published",
+    "test:stress": "bash ./scripts/stress-suite.sh"
   },
   "dependencies": {
     "commander": "^14.0.0",
