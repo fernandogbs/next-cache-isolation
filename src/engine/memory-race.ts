@@ -3,7 +3,10 @@ import type {
   ColdFillRaceScenario,
   FixtureManifest,
 } from "../fixtures/manifest.js";
-import { evaluateBodySentinel } from "../validators/body-sentinel.js";
+import type { OracleResult } from "../validators/body-sentinel.js";
+
+import { requestText } from "./http.js";
+import { evaluateIsolationOracle } from "./oracle.js";
 
 export type MemoryRaceDeps = {
   baseUrl: string;
@@ -28,23 +31,6 @@ function contextById(scenario: ColdFillRaceScenario, id: string) {
   return ctx;
 }
 
-async function getText(
-  fetchImpl: typeof fetch,
-  url: string,
-): Promise<{ status: number; body: string; durationMs: number }> {
-  const started = Date.now();
-  const response = await fetchImpl(url, {
-    method: "GET",
-    redirect: "manual",
-  });
-  const body = await response.text();
-  return {
-    status: response.status,
-    body,
-    durationMs: Date.now() - started,
-  };
-}
-
 /**
  * memory policy: arm latch → race direct+unstable → observe same process.
  * Never restarts the server between race and observe.
@@ -52,13 +38,12 @@ async function getText(
 export async function runMemoryRace(
   manifest: FixtureManifest,
   deps: MemoryRaceDeps,
-): Promise<ReturnType<typeof evaluateBodySentinel>> {
+): Promise<OracleResult> {
   if (manifest.cachePolicy !== "memory") {
     throw new Error(`Unsupported cachePolicy: ${manifest.cachePolicy}`);
   }
   assertColdFillRace(manifest);
 
-  const fetchImpl = deps.fetchImpl ?? fetch;
   const { scenario } = manifest;
   const directCtx = contextById(scenario, scenario.oracle.raceDirectContext);
   const unstableCtx = contextById(
@@ -66,15 +51,18 @@ export async function runMemoryRace(
     scenario.oracle.raceUnstableContext,
   );
   const observeCtx = contextById(scenario, scenario.oracle.observeContext);
+  const fetchOpts = deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {};
 
   if (scenario.latch.enabled) {
-    const armUrl = new URL(scenario.latch.armPath, deps.baseUrl);
-    const armResponse = await fetchImpl(armUrl, {
+    const armUrl = new URL(scenario.latch.armPath, deps.baseUrl).toString();
+    const armResponse = await requestText({
+      url: armUrl,
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ holdMs: scenario.latch.holdMs }),
+      ...fetchOpts,
     });
-    if (!armResponse.ok) {
+    if (armResponse.status < 200 || armResponse.status >= 300) {
       throw new Error(`Failed to arm latch: ${armResponse.status}`);
     }
   }
@@ -89,13 +77,20 @@ export async function runMemoryRace(
   ).toString();
 
   const race = await Promise.all([
-    getText(fetchImpl, directUrl),
-    getText(fetchImpl, unstableUrl),
+    requestText({ url: directUrl, context: directCtx, ...fetchOpts }),
+    requestText({ url: unstableUrl, context: unstableCtx, ...fetchOpts }),
   ]);
 
   if (scenario.latch.enabled) {
-    const releaseUrl = new URL(scenario.latch.releasePath, deps.baseUrl);
-    await fetchImpl(releaseUrl, { method: "POST" }).catch(() => undefined);
+    const releaseUrl = new URL(
+      scenario.latch.releasePath,
+      deps.baseUrl,
+    ).toString();
+    await requestText({
+      url: releaseUrl,
+      method: "POST",
+      ...fetchOpts,
+    }).catch(() => undefined);
   }
 
   // Instrumentation only — do not use race bodies as the isolation oracle.
@@ -105,17 +100,17 @@ export async function runMemoryRace(
     interpolatePath(scenario.paths.observe, observeCtx.rootParams),
     deps.baseUrl,
   ).toString();
-  const observe = await getText(fetchImpl, observeUrl);
+  const observe = await requestText({
+    url: observeUrl,
+    context: observeCtx,
+    ...fetchOpts,
+  });
 
-  return evaluateBodySentinel(
-    {
-      statusCode: observe.status,
-      body: observe.body,
-      mustContain: scenario.oracle.mustContain,
-      mustNotContain: scenario.oracle.mustNotContain,
-      acceptErrorWithoutForbidden:
-        scenario.oracle.acceptErrorWithoutForbidden,
-    },
-    observe.durationMs,
-  );
+  return evaluateIsolationOracle({
+    oracle: scenario.oracle,
+    contexts: scenario.contexts,
+    statusCode: observe.status,
+    body: observe.body,
+    durationMs: observe.durationMs,
+  });
 }

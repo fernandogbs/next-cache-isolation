@@ -25,16 +25,17 @@ export async function runCustomSuite(options: {
   const basePort = options.basePort ?? resolved.basePort ?? 43110;
 
   const fixtures: FixtureRunResult[] = [];
-  for (const [index, fixtureDirectory] of resolved.fixtureDirectories.entries()) {
+  for (const [index, entry] of resolved.fixtures.entries()) {
     const result = await runFixture({
-      fixtureDirectory,
+      fixtureDirectory: entry.directory,
       port: basePort + index,
+      ...(entry.manifest ? { manifest: entry.manifest } : {}),
     });
     fixtures.push(result);
   }
 
   const report: SliceReport = {
-    toolVersion: options?.toolVersion ?? "0.1.0",
+    toolVersion: options?.toolVersion ?? "0.2.0",
     suite: "custom",
     nodeVersion: process.version,
     startedAt,

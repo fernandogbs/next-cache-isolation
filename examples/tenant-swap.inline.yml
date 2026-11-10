@@ -1,0 +1,35 @@
+# Example custom suite with an inline FixtureManifest (tenant-swap).
+# Point path at any Next app directory that serves /app with tenant identity.
+version: 1
+suite: custom
+fixtures:
+  - path: ../fixtures/process-stub
+    manifest:
+      id: tenant-swap-inline-demo
+      advisory: CUSTOM-tenant-swap
+      expected: PASS
+      nextVersion: 16.4.5
+      cacheComponents: true
+      healthPath: /nci/health
+      cachePolicy: memory
+      scenario:
+        id: tenant-swap-headers
+        procedure: tenant-swap
+        path: /app
+        contexts:
+          - id: a
+            sentinel: TENANT_A
+            headers:
+              x-tenant: a
+            cookies:
+              session: a
+            host: a.example.test
+          - id: b
+            sentinel: TENANT_B
+            headers:
+              x-tenant: b
+            host: b.example.test
+        oracle:
+          type: excludes-other-tenants
+          warmContext: a
+          observeContext: b

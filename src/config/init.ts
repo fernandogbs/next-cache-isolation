@@ -4,13 +4,39 @@ import path from "node:path";
 import { DEFAULT_CONFIG_FILENAME } from "./loader.js";
 
 const TEMPLATE = `# next-cache-isolation custom suite
-# Each path must contain an nci.fixture.json (see published fixtures for shape).
+# Each entry is a Next app directory. Prefer nci.fixture.json on disk,
+# or embed the same FixtureManifest under "manifest:" (inline wins).
 version: 1
 suite: custom
 # basePort: 43110
 fixtures:
-  # - path: ./nci/my-scenario
+  # Path-only: loads <path>/nci.fixture.json
   - path: ./fixtures/example-scenario
+  # Inline manifest (same schema as nci.fixture.json):
+  # - path: ./my-app
+  #   manifest:
+  #     id: my-app-isolation
+  #     advisory: CUSTOM
+  #     expected: PASS
+  #     nextVersion: 16.4.5
+  #     cacheComponents: true
+  #     healthPath: /nci/health
+  #     cachePolicy: memory
+  #     scenario:
+  #       id: tenant-swap-demo
+  #       procedure: tenant-swap
+  #       path: /app
+  #       contexts:
+  #         - id: a
+  #           sentinel: TENANT_A
+  #           headers: { x-tenant: a }
+  #         - id: b
+  #           sentinel: TENANT_B
+  #           headers: { x-tenant: b }
+  #       oracle:
+  #         type: excludes-other-tenants
+  #         warmContext: a
+  #         observeContext: b
 `;
 
 export type InitOptions = {

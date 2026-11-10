@@ -46,7 +46,7 @@ export async function runPublishedSuite(options?: {
   }
 
   const report: SliceReport = {
-    toolVersion: options?.toolVersion ?? "0.1.0",
+    toolVersion: options?.toolVersion ?? "0.2.0",
     suite: "published",
     nodeVersion: process.version,
     startedAt,

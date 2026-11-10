@@ -11,19 +11,19 @@
 | [superpowers/specs/2026-11-07-ghsa-vvgp-slice-design.md](superpowers/specs/2026-11-07-ghsa-vvgp-slice-design.md) | M4 fallback shell + `persistent` |
 | [superpowers/specs/2026-11-07-custom-suite-m5-design.md](superpowers/specs/2026-11-07-custom-suite-m5-design.md) | Custom YAML / `init` / `doctor` |
 | [superpowers/specs/2026-11-07-consumer-action-m6-design.md](superpowers/specs/2026-11-07-consumer-action-m6-design.md) | Consumer GitHub Action |
+| [superpowers/specs/2026-11-10-external-flight-tenant-design.md](superpowers/specs/2026-11-10-external-flight-tenant-design.md) | `external`, Flight oracle, inline YAML, `tenant-swap` (0.2.0) |
 | [architecture/system-overview.md](architecture/system-overview.md) | Module map and per-scenario cache-policy state machines |
 
 ## Roadmap status
 
-**M1–M6 shipped on `main`.** GitHub planning issues `#7`–`#11` and their
-implementation tickets are closed. Agent workflow notes: [`agents/`](agents/)
-+ root [`AGENTS.md`](../AGENTS.md).
+**M1–M6 shipped on `main`.** Engine extensions in **0.2.0**: Redis
+`external` policy, `flight-sentinel`, inline YAML manifests, `tenant-swap`.
+GitHub planning issues `#7`–`#11` and their implementation tickets are closed.
+Agent workflow notes: [`agents/`](agents/) + root [`AGENTS.md`](../AGENTS.md).
 
-### Deferred beyond M6
+### Deferred beyond 0.2.0
 
 - Public npm publish (Action builds from checkout today)
-- `cachePolicy: external`
-- Full Flight/RSC oracle
-- Inline YAML scenario authoring (paths + `nci.fixture.json` only)
 - Other November 2026 advisories outside the four GHSA slices above
+- GHSA-vvgp HTML-substitution variant
 - Dashboard / telemetry / static analysis

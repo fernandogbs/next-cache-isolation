@@ -148,4 +148,61 @@ describe("doctor", () => {
     expect(report.exitCode).toBe(0);
     expect(report.findings.some((f) => f.code === "catalog-hint")).toBe(true);
   });
+
+  it("accepts inline manifests and skips nci.fixture.json", async () => {
+    const root = await tempDir();
+    const fixtureDir = path.join(root, "app");
+    await mkdir(fixtureDir, { recursive: true });
+    // Intentionally no nci.fixture.json on disk.
+    await writeFile(
+      resolveConfigPath(root),
+      [
+        "version: 1",
+        "suite: custom",
+        "fixtures:",
+        "  - path: ./app",
+        "    manifest:",
+        "      id: inline-ok",
+        "      advisory: CUSTOM",
+        "      expected: PASS",
+        "      nextVersion: 16.4.5",
+        "      cacheComponents: true",
+        "      healthPath: /nci/health",
+        "      cachePolicy: memory",
+        "      scenario:",
+        "        id: tenant-swap-demo",
+        "        procedure: tenant-swap",
+        "        path: /app",
+        "        contexts:",
+        "          - id: a",
+        "            sentinel: TENANT_A",
+        "            headers:",
+        "              x-tenant: a",
+        "          - id: b",
+        "            sentinel: TENANT_B",
+        "            headers:",
+        "              x-tenant: b",
+        "        oracle:",
+        "          type: excludes-other-tenants",
+        "          warmContext: a",
+        "          observeContext: b",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const resolved = await loadCustomSuiteConfig(resolveConfigPath(root));
+    expect(resolved.fixtures).toHaveLength(1);
+    expect(resolved.fixtures[0]?.manifest?.id).toBe("inline-ok");
+    expect(resolved.fixtures[0]?.manifest?.scenario.procedure).toBe(
+      "tenant-swap",
+    );
+
+    const report = await runDoctor({ cwd: root });
+    expect(report.exitCode).toBe(0);
+    expect(
+      report.findings.some(
+        (f) => f.code === "fixture" && f.message.includes("inline"),
+      ),
+    ).toBe(true);
+  });
 });

@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { loadAdvisory } from "../catalog/loader.js";
 import { loadFixtureManifest } from "../fixtures/loader.js";
+import type { FixtureManifest } from "../fixtures/manifest.js";
 
 import { loadCustomSuiteConfig, resolveConfigPath } from "./loader.js";
 
@@ -20,6 +21,16 @@ export type DoctorReport = {
 function nodeMajor(version: string): number {
   const match = /^v(\d+)/.exec(version);
   return match ? Number.parseInt(match[1]!, 10) : 0;
+}
+
+async function resolveManifest(
+  directory: string,
+  inline?: FixtureManifest,
+): Promise<FixtureManifest> {
+  if (inline) {
+    return inline;
+  }
+  return loadFixtureManifest(directory);
 }
 
 export async function runDoctor(options: {
@@ -65,15 +76,16 @@ export async function runDoctor(options: {
     return { findings, exitCode: 2 };
   }
 
-  for (const fixtureDirectory of resolved.fixtureDirectories) {
-    const rel = path.relative(cwd, fixtureDirectory) || fixtureDirectory;
+  for (const fixture of resolved.fixtures) {
+    const rel = path.relative(cwd, fixture.directory) || fixture.directory;
     try {
-      await access(fixtureDirectory);
-      const manifest = await loadFixtureManifest(fixtureDirectory);
+      await access(fixture.directory);
+      const manifest = await resolveManifest(fixture.directory, fixture.manifest);
+      const source = fixture.manifest ? "inline" : "nci.fixture.json";
       findings.push({
         level: "ok",
         code: "fixture",
-        message: `${rel} → ${manifest.id} (${manifest.advisory}, expect ${manifest.expected})`,
+        message: `${rel} → ${manifest.id} (${manifest.advisory}, expect ${manifest.expected}, ${source})`,
       });
 
       try {

@@ -12,7 +12,7 @@ program
   .description(
     "Dynamic cache isolation testing for Next.js Cache Components apps",
   )
-  .version("0.1.0");
+  .version("0.2.0");
 
 program
   .command("init")

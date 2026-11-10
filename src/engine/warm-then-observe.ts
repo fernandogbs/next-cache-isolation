@@ -3,7 +3,14 @@ import type {
   FixtureManifest,
   WarmThenObserveScenario,
 } from "../fixtures/manifest.js";
-import { evaluateBodySentinel } from "../validators/body-sentinel.js";
+import type { OracleResult } from "../validators/body-sentinel.js";
+
+import { requestText } from "./http.js";
+import {
+  evaluateIsolationOracle,
+  RSC_OBSERVE_HEADERS,
+  resolveOracleMarkers,
+} from "./oracle.js";
 
 export type WarmThenObserveDeps = {
   baseUrl: string;
@@ -30,65 +37,53 @@ function contextById(scenario: WarmThenObserveScenario, id: string) {
   return ctx;
 }
 
-async function getText(
-  fetchImpl: typeof fetch,
-  url: string,
-): Promise<{ status: number; body: string; durationMs: number }> {
-  const started = Date.now();
-  const response = await fetchImpl(url, {
-    method: "GET",
-    redirect: "manual",
-  });
-  const body = await response.text();
-  return {
-    status: response.status,
-    body,
-    durationMs: Date.now() - started,
-  };
-}
-
 /** Seeds / poisons the shared entry; response is not the isolation oracle. */
 export async function warmWarmThenObserve(
   manifest: FixtureManifest,
   deps: WarmThenObserveDeps,
 ): Promise<void> {
   assertWarmThenObserve(manifest);
-  const fetchImpl = deps.fetchImpl ?? fetch;
   const { scenario } = manifest;
   const warmCtx = contextById(scenario, scenario.oracle.warmContext);
   const warmUrl = new URL(
     interpolatePath(scenario.paths.warm, warmCtx.rootParams),
     deps.baseUrl,
   ).toString();
-  await getText(fetchImpl, warmUrl);
+  await requestText({
+    url: warmUrl,
+    context: warmCtx,
+    ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+  });
 }
 
 /** Isolation oracle against the observe context. */
 export async function observeWarmThenObserve(
   manifest: FixtureManifest,
   deps: WarmThenObserveDeps,
-): Promise<ReturnType<typeof evaluateBodySentinel>> {
+): Promise<OracleResult> {
   assertWarmThenObserve(manifest);
-  const fetchImpl = deps.fetchImpl ?? fetch;
   const { scenario } = manifest;
   const observeCtx = contextById(scenario, scenario.oracle.observeContext);
   const observeUrl = new URL(
     interpolatePath(scenario.paths.observe, observeCtx.rootParams),
     deps.baseUrl,
   ).toString();
-  const observe = await getText(fetchImpl, observeUrl);
+  const markers = resolveOracleMarkers(scenario.oracle, scenario.contexts);
+  const observe = await requestText({
+    url: observeUrl,
+    context: observeCtx,
+    headers:
+      markers.kind === "flight-sentinel" ? { ...RSC_OBSERVE_HEADERS } : {},
+    ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+  });
 
-  return evaluateBodySentinel(
-    {
-      statusCode: observe.status,
-      body: observe.body,
-      mustContain: scenario.oracle.mustContain,
-      mustNotContain: scenario.oracle.mustNotContain,
-      acceptErrorWithoutForbidden:
-        scenario.oracle.acceptErrorWithoutForbidden,
-    },
-    observe.durationMs,
-  );
+  return evaluateIsolationOracle({
+    oracle: scenario.oracle,
+    contexts: scenario.contexts,
+    statusCode: observe.status,
+    body: observe.body,
+    durationMs: observe.durationMs,
+  });
 }
 
 /**
@@ -98,7 +93,7 @@ export async function observeWarmThenObserve(
 export async function runWarmThenObserve(
   manifest: FixtureManifest,
   deps: WarmThenObserveDeps,
-): Promise<ReturnType<typeof evaluateBodySentinel>> {
+): Promise<OracleResult> {
   if (manifest.cachePolicy !== "memory") {
     throw new Error(
       `runWarmThenObserve is memory-only; use split warm/observe for ${manifest.cachePolicy}`,

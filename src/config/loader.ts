@@ -28,11 +28,17 @@ export async function loadCustomSuiteConfig(
   const config = CustomSuiteConfigSchema.parse(parsed);
   const configDir = path.dirname(configPath);
 
+  const fixtures = config.fixtures.map((entry) => {
+    const directory = path.resolve(configDir, entry.path);
+    return entry.manifest
+      ? { directory, manifest: entry.manifest }
+      : { directory };
+  });
+
   return {
     configPath,
     basePort: config.basePort,
-    fixtureDirectories: config.fixtures.map((entry) =>
-      path.resolve(configDir, entry.path),
-    ),
+    fixtures,
+    fixtureDirectories: fixtures.map((item) => item.directory),
   };
 }

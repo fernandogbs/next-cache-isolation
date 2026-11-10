@@ -17,6 +17,7 @@ It does **not** claim formal absence of leaks outside the encoded scenarios.
 | **M4** | [GHSA-vvgp](https://github.com/vercel/next.js/security/advisories/GHSA-vvgp-ww4w-46vf) fallback-shell poisoning (`warm-then-observe`, `persistent`) |
 | **M5** | Custom suite: `next-cache-isolation.yml`, `init`, `doctor` |
 | **M6** | Consumer [GitHub Action](action.yml) |
+| **0.2.0** | `cachePolicy: external` (Redis), `flight-sentinel`, inline YAML manifests, `tenant-swap` |
 
 Design notes live under [`docs/`](docs/README.md). Advisory version pins live in
 [`catalogs/advisories/`](catalogs/advisories/) (not hard-coded in the CLI).
@@ -48,13 +49,14 @@ npm --prefix fixtures/ghsa-vvgp-patched ci
 # Published advisory regression (8 fixtures)
 node dist/cli/index.js test --suite published --base-port 43110
 
-# Custom suite (paths → apps with nci.fixture.json)
+# Custom suite (paths → nci.fixture.json, or inline manifest in YAML)
 node dist/cli/index.js init
 node dist/cli/index.js doctor --config next-cache-isolation.yml
 node dist/cli/index.js test --suite custom --config next-cache-isolation.yml
 ```
 
-Example custom config: [`examples/custom-suite.rhh4.yml`](examples/custom-suite.rhh4.yml).
+Example custom configs: [`examples/custom-suite.rhh4.yml`](examples/custom-suite.rhh4.yml),
+[`examples/tenant-swap.inline.yml`](examples/tenant-swap.inline.yml).
 
 ### Exit codes (tool / published & custom suites)
 
@@ -76,7 +78,25 @@ Reports are written to `.next-cache-isolation/report.json` with
 | --- | --- |
 | `memory` | Warm/race and observe on the **same** process (no restart) |
 | `persistent` | Warm/poison → **stop** → **start** same `.next` → observe |
-| `external` | Not implemented → `SKIP` |
+| `external` | Reset Redis prefix → warm → **stop** → **start** → observe → reset again |
+
+`external` requires `externalCache` on the manifest (`adapter: redis`,
+`urlEnv`, `keyPrefix`). The app under test must point Next’s `cacheHandler` at
+the same store. Set `NCI_REDIS_URL` (or the configured env name).
+
+### Oracles and procedures
+
+| Oracle | Use |
+| --- | --- |
+| `body-sentinel` | HTML/text markers (published GHSA fixtures) |
+| `flight-sentinel` | Decode Next text Flight (`RSC: 1`) then apply sentinels |
+| `excludes-other-tenants` | Observe sentinel required; every other context sentinel forbidden |
+
+| Procedure | Shape |
+| --- | --- |
+| `cold-fill-race` | Latch + concurrent fill; `memory` only |
+| `warm-then-observe` | Warm path then observe path |
+| `tenant-swap` | Same path; warm/observe differ by headers, cookies, and/or `Host` |
 
 ## GitHub Action
 
